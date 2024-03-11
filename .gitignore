@@ -19,4 +19,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-./docc/web3/artifacts/*
+/docs/web3/Solidity/artifacts/

@@ -1,0 +1,92 @@
+---
+title: 智能合约Solidity语言
+id: solidity-lang
+---
+
+# 智能合约概述
+
+:::warning
+本文档基于[Solidity官方中文文档(v0.8.20)](https://docs.soliditylang.org/zh/v0.8.20/)撰写
+:::
+
+## 简单的智能合约
+
+### 存储合约示例
+
+这是一个最基本的例子，现在不大理解，先写一下后面在深入了解。
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Simple {
+
+    uint storeData;
+
+    function setStoreData(uint data) public {
+        storeData = data;
+    }
+
+    function getStoreData() view public returns (uint) {
+        return (storeData);
+    }
+
+}
+```
+
+:::note
+代码示意
+:::
+
+```
+// SPDX-License-Identifier: MIT
+```
+
+这一行是声明源代码使用的`MIT`开源协议，其他人在使用或其他操作时应该遵循标注的`MIT`开源协议守则(可以根据开发者自行任意选择)。
+
+```
+pragma solidity ^0.8.0;
+```
+
+这一行是声明源代码使用的是Solidity版本大于0.8.0写的。这是为了确保合约不会在新的编译器版本中突然行为一场。关键词`pragma`的含义是，一般来说，`pragmas(编译指令)`是告知编译器如何处理源代码的指令的(例如：[Pragma once](https://en.wikipedia.org/wiki/Pragma_once))。
+
+```
+contract Simple {
+
+    uint storedData;
+
+    function setStoreData(uint data) public {
+        storedData = data;
+    }
+
+    function getStoreData() view public returns (uint) {
+        return (storedData);
+    }
+
+}
+```
+
+在Solidity中合约的含义就是一组代码（它的`函数`）和数据（它的`状态`），它们位于以太坊区块链的一个特定地址上。
+
+- `contract Simple {}`为创建了一个名为`Simple`的合约。
+
+- `uint storeData;`声明一个类型为`uint(256位无符号整数)`的状态变量，叫做`storedData`。可以认为它的数据库里的一个位置，可以通过调用管理数据库代码的函数进行查询和变更。对于以太坊来说，上述的合约就是拥有合约（`owning contract`）。在这种情况下，函数`setStoreData`和`getStoreData`可以用来变更或取出变量的值。
+
+:::tip
+要访问一个状态变量，并不需要像比如`Java语言`中一样使用`this.`这样的钱戳，虽然这是其他语言常见的做法。
+:::
+
+该合约能完成的事情并不多（由于以太坊构建的基础架构的原因）：它能允许任何人在合约中存储一个单独的数字，并且这个数字可以被世界上任何人访问，且没有可行的办法组织你发布的这个数字。当然，任何人都可以在此调用`setStoreData`函数，传入不同的值，覆盖你的数字，但是这个数字人会呗存储在区块链的历史记录中。随后，可以看到怎样施加访问限制，以确保只有你才能改变这个数字。
+
+:::info
+所有的标识符（合约名称，函数名称和变量名称）都只能使用[ASCII字符集](https://zh.wikipedia.org/wiki/ASCII)。[UTF-8编码](https://zh.wikipedia.org/wiki/UTF-8)的数据可有用字符串变量的形式存储。
+:::
+
+:::warning
+小心使用[Unicode](https://zh.wikipedia.org/wiki/Unicode)文本，因为有些字符虽然长得很相像(甚至一样)，但其字符码是不同的，其编码后的字符数组也会不一样。
+:::
+
+### 子货币（Subcurrency）示例
+
+下面的合约实现了一个最简单的加密货币。这里，币确实可以无中生有的产生，但是只有创建合约的人才能做到（实现一个不同的发行计划也不难）。而且，任何人都可以给其他人转币，不需要注册用户名和密码，所需要的知识以太坊密钥对。
+
