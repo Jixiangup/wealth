@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwealth=self.webpackChunkwealth||[]).push([[328],{5231:(e,t,c)=>{c.r(t),c.d(t,{default:()=>h});var s=c(781),a=c(4848);const h=()=>(0,a.jsxs)(s.A,{title:"React\u9875\u9762",children:[(0,a.jsx)("h1",{children:"\u6211\u7684React\u9875\u9762"}),(0,a.jsx)("p",{children:"\u8fd9\u662f\u4e00\u4e2aReact\u6784\u5efa\u51fa\u6765\u7684\u9875\u9762"})]})}}]);

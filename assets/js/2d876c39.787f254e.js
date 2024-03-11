@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwealth=self.webpackChunkwealth||[]).push([[419],{7725:e=>{e.exports=JSON.parse('{"permalink":"/wealth/blog/tags/hello","page":1,"postsPerPage":10,"totalPages":1,"totalCount":2,"blogDescription":"Blog","blogTitle":"Blog"}')}}]);

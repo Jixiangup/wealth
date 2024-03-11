@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwealth=self.webpackChunkwealth||[]).push([[545],{2024:a=>{a.exports=JSON.parse('{"label":"facebook","permalink":"/wealth/blog/tags/facebook","allTagsPath":"/wealth/blog/tags","count":1,"unlisted":false}')}}]);
