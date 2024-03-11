@@ -15,7 +15,7 @@ id: solidity-lang
 
 这是一个最基本的例子，现在不大理解，先写一下后面在深入了解。
 
-```solidity
+```solidity title="Simple.sol"
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -89,4 +89,102 @@ contract Simple {
 ### 子货币（Subcurrency）示例
 
 下面的合约实现了一个最简单的加密货币。这里，币确实可以无中生有的产生，但是只有创建合约的人才能做到（实现一个不同的发行计划也不难）。而且，任何人都可以给其他人转币，不需要注册用户名和密码，所需要的知识以太坊密钥对。
+
+```solidity title="Coin.sol"
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
+
+contract Coin {
+
+    // 关键字 public 使变量可以从其他合约中访问。
+    address public minter;
+
+    // 定义一个mapping数据类型 key为address 值为uint(无符号256位整数)
+    mapping(address => uint) public balances;
+
+    // 事件允许客户端对您声明的特定合约变化作出反应
+    event Sent(address from, address to, uint amount);
+
+    // 构造函数代码只有在合约创建时运行
+    constructor() {
+        minter = msg.sender;
+    }
+
+    // 向一个地址发送一定数量的新创建的代币
+    // 但是智能由合约创建者调用
+    function mint(address receiver, uint amount) public {
+        require(msg.sender == minter);
+        balances[receiver] += amount;
+    }
+
+    // 错误类型变量允许提供关于操作失败原因的信息
+    // 它们会返回给函数的调用者
+    error InsufficientBalance(uint requested, uint available);
+
+    // 从任何调用者哪里发送一定数量的代币到一个地址
+    function send(address receiver, uint amount) public {
+        if (amount > balances[msg.sender]) {
+            revert InsufficientBalance({
+                requested: amount,
+                available: balances[msg.sender]
+            });
+        }
+
+        balances[msg.sender] -= amount;
+        balances[receiver] += amount;
+        emit Sent(msg.sender, receiver, amount);
+    }
+
+}
+```
+
+:::note
+代码示意
+:::
+
+```
+// 关键字 public 使变量可以从其他合约中访问。
+address public minter;
+```
+
+export const Address = ({children}) => {
+    // todo 添加本文address 文档地址
+    return (
+        <div>
+            {children}
+        </div>
+    );
+}
+
+这一行声明了一个可以被公开访问的[address](#@)类型的状态变量。`address`类型是一个`160位`的值，且不允许任何算数操作。这种类型适合存储合约地址或[外部账户](#@)的密钥对。
+
+关键字`public`自动生成一个函数，允许您在这个合约之外访问这个状态变量的当前值。如果没有这个关键字，其他的合约没有办法访问这个变量。:
+
+```
+// 定义一个mapping数据类型 key为address 值为uint(无符号256位整数)
+mapping(address => uint) public balances;
+```
+export const Mapping = ({children}) => {
+    // todo 添加本文映射和无符号整数文档地址
+    // todo 添加哈希表文档地址
+    return (
+        <div>
+            {children}
+        </div>
+    );
+}
+
+同样的也创建了一个公共状态变量，但它是一个更复杂的数据类型。[映射](#@)类型将地址映射到[无符号整数](@@)。
+
+映射可以被看作是[哈希表](https://zh.wikipedia.org/wiki/%E5%93%88%E5%B8%8C%E8%A1%A8)，它实际上是被初始化的，因此每一个可能的键从一开始就存在，并被映射到一个值，其字节表示为全零的值。然而，它即不可能获得一个映射的所有键的列表，也不可能获得所有值的列表。因此，要么记住添加到映射中的内容，要么在不需要的情况下使用它。甚至更好的是，保留一个列表，或者使用一个更合适的数据类型。
+
+而由`public`关键字创建的 [getter函数]则是更复杂一些的情况，它大概如下所示：
+
+```
+function balances(address acount) external view returns (uint) {
+    return balances(acount);
+}
+```
+
+可以用这个函数来查询单个账户的余额。
 

@@ -20,7 +20,7 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/web3/Solidity/solidity-lang">
-            Docusaurus Tutorial - 5min ⏱️
+            学习Web3
           </Link>
         </div>
       </div>
