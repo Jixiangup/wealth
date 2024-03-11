@@ -4,14 +4,14 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Jixiang',
-  tagline: 'Dinosaurs are cool',
-  favicon: 'img/favicon.ico',
+  tagline: '知识丰富自我',
+  favicon: 'img/favicon1.svg',
 
   // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
+  url: 'https://jixiangup.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/wealth',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -61,7 +61,8 @@ const config: Config = {
       title: 'Wealth',
       logo: {
         alt: 'Logo',
-        src: 'img/logo.svg',
+        // src: 'img/logo.svg',
+        src: 'img/r470 34.svg',
       },
       items: [
         {
