@@ -20,7 +20,8 @@ function HomepageHeader() {
           <div className={styles.buttons}>
             <Link
               className="button button--secondary button--lg"
-              to="/docs/web3/Solidity/solidity_lang">
+              to="/wealth/docs/web3/Solidity/solidity_lang"
+            >
               随记
             </Link>
           </div>
