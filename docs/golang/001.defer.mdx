@@ -1,0 +1,333 @@
+---
+title: Golang的多线程和defer
+id: golang_defer
+---
+
+## 线程
+
+在Go语言中，多线程的概念一般是用`goroutines`实现的，不是想`Java`这种语言的那种传统意义上的操作系统线程。goroutine是Go语言的核心特性之一，提供了一种非常轻量级的线程实现，由Go运行时管理。
+
+### Goroutines
+
+goroutine可以理解为一种虚拟线程，它在Go运行的时候内部被多个OS线程之间高效的调度。goroutine的调度不是由操作系统内核管理的，而是由Go运行时自己处理，这就让goroutine具有非常小的内存开销(一般几KB)，所以可以允许同时运行成千上万个goroutine
+
+#### 启动goroutine
+
+要在Go中启动一个goroutine，只要用`go`关键字然后就是函数调用就可以了
+
+```go
+func TestGoroutine(t *testing.T) {
+	go say("world") // 开启一个新的goroutine
+	say("hello")    // 在当前goroutine中执行
+}
+
+func say(s string) {
+	for i := 0; i < 5; i++ {
+		time.Sleep(100 * time.Millisecond)
+		println("s: ", s, "\ti: ", i)
+	}
+}
+```
+
+`say("world")`在新的goroutine中异步执行，而`say("hello")`在主goroutine(也就是主线程)中执行。因此，输出是会两者交替执行的结果。
+
+### 理解[并发和并行](#并发和并行)
+
+- 并发(Concurrency)：指的是多个任务交替执行，单核CPU上的多任务实际上就是并发执行。
+- 并行(Parallelism)：指的是多个任务在多核CPU上同时执行。
+
+Go语言的goroutine在单核上表现为并发，在多核上则可能表现为真正的并行。Go运行时包含一个调度器，该调度器将goroutines分配给可用的逻辑CPU核心上执行。
+
+### Go运行时调度器
+
+Go运行时调度器的设计采用了`M`(机器)，`P`(处理器)，`G`(goroutine)的模型
+
+- G(goroutine)：一个待执行的任务
+- P(Processor)：代表了系统的逻辑处理器数量，并且维护了一组本地goroutine队列。每个P都需要一个M来执行其队列中的G。
+- M(Machine)：一个执行系统级线程，他执行具体的任务。
+
+Go运行时自动管理这些资源，将G分配到P的本地队列，M从P那里获取G来执行。这一切都是自动且对程序员透明的。
+
+### 同步机制
+
+虽然goroutines极大地简化了并发编程，但正确地同步和通信仍然是必需的。Go提用channels（通道），为goroutines之间的同步提供了一种优雅的方式。通过channels，可以发送和接收数据，这些操作默认是阻塞的
+
+```go
+func TestGoroutine(t *testing.T) {
+	goroutineNickname := make(chan string)
+	go func() {
+		goroutineNickname <- "zhuzhuxia"
+	}()
+	nickname := <-goroutineNickname
+	println(nickname) // 输出zhuzhuxia
+}
+```
+
+### WaitGroup(线程等待组)
+
+这个有点像异步编排吧，但是也不是完全一样。这是让一个线程组里面的所有线程一起执行，但是调用他的Wait()会阻塞，直到所有goroutine执行完毕，即WaitGroup计数器归零
+
+```go
+func TestGoroutine(t *testing.T) {
+	var waitGroup sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		// 等待组+1
+		waitGroup.Add(1)
+		go worker(i, &waitGroup)
+	}
+	// Wait()会阻塞，直到所有goroutine执行完毕，即WaitGroup计数器归零
+	waitGroup.Wait()
+	println("All worker done")
+}
+
+func worker(id int, waitGroup *sync.WaitGroup) {
+	defer waitGroup.Done() // goroutine结束就将waitGroup计数-1, 在函数返回时调用Done()来通知WaitGroup任务已完成
+	fmt.Printf("Worker %d starting.\n", id)
+	time.Sleep(time.Second)
+	fmt.Printf("Worker %d done.\n", id)
+}
+```
+
+#### 工作原理
+
+- 初始化WaitGroup: `var waitGroup sync.WaitGroup`声明了一个`WaitGroup`变量。
+- 设置计数器：使用`waitGroup.add(1)`(也可以直接在循环外调用`waitGroup.add(10)`)设置计数器的值，这里的值`1`表示有五个goroutine要等待。每次调用`Add`的时候都会增加计数器的值。
+- 启动goroutine：在循环中启动10个`goroutine`，每个goroutine结束前会调用`waitGroup.Done()`。这个方法会将`WaitGroup`的计数器`减1(-1)`。
+- 等待完成：`waitGroup.Wait()`会阻塞，直到`WaitGroup`的计数器减到0，即所有的goroutine执行完毕。
+
+#### 注意事项
+
+- 确保每个启动的goroutine最终都会调用`waitGroup.Done()`，否则`waitGroup.Wait()`将会永远阻塞。
+- `waitGroup.Add()`应该在启动goroutine之前调用，这样可以避免`race condition(竞态条件)`，即在所有goroutine启动之前，主程序就已经开始等待的情况。
+- 使用`defer waitGroup.Done()`可以确保即使goroutine中发生了panic，`waitGroup.Done()`也会被调用，避免死锁。
+
+通过这种方式，就可以控制多个goroutine的执行流程，在所有任务执行完成后继续主程序的执行。这对于并发编程来说是一种非常重要的模式。
+
+### 异步编排
+
+在Go中实现类似于异步编排的功能，可以用`channels`和`select`语句来进行更细粒度的控制和通信，从而在goroutines之间协调异步任务的执行。这样可以根据不同的需要进行任务的组合、串联、并联等复杂的操作流程。
+
+使用channels来实现异步任务的编排，包括并发执行、任务以来和结果聚合等。
+
+#### 示例：异步任务编排
+
+假设有三个任务，第一个任务和第二个任务可以并行执行，但是第三个任务需要等待前两个任务都完成后才执行。
+
+```go
+func TestGoroutine(t *testing.T) {
+	t1str := make(chan string)
+	t2str := make(chan string)
+	t3str := make(chan string)
+
+	go task1(t1str)
+	go task2(t2str)
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+		r1 := <-t1str           // 阻塞等待task1的结果
+		r2 := <-t2str           // 阻塞等待task2的结果
+		go task3(t3str, r1, r2) // task3依赖task1和task2的结果
+	}()
+
+	waitGroup.Wait()
+
+	result := <-t3str // 阻塞等待task3的结果
+	println(result)
+}
+
+func task1(str chan<- string) {
+	time.Sleep(2 * time.Second) // 模拟操作耗时
+	str <- "Result of task1"
+}
+
+func task2(str chan<- string) {
+	time.Sleep(2 * time.Second) // 模拟操作耗时
+	str <- "Result of task2"
+}
+
+func task3(str chan<- string, r1, r2 string) {
+	println("Received: ", r1, "\tand\t", r2)
+	time.Sleep(1 * time.Second) // 模拟操作耗时
+	str <- "Result of task3 based on previous results"
+}
+// 输出：
+//  Received:  Result of task1 	and	 Result of task2
+//  Result of task3 based on previous results
+```
+
+##### 工作原理
+
+
+- 并发执行任务1和任务2：使用`go task1(t1str)`和`go task2(t2str)`启动任务1和任务2，这两个任务会并行执行，并将结果发送到各自的channel。
+- 等待结果并执行任务3:一个匿名的goroutine等待来自`task1`和`task2`的结果。一旦两个结果都准备好，它将这些结果传递给`task3`。
+- 同步等待：使用`syns.WaitGroup`等待匿名goroutine完成任务的调度，这确保在继续执行前`task3`已经被安排好。
+- 结果聚合：等待最终任务`task3`的结果，然后打印出来。
+
+#### 异步编排的模式
+
+- 并发执行：同时开始多个独立的任务。
+- 任务链：一个任务的输出是另一个任务的输入。
+- 错误处理：可以在任何一个任务重加入错误检查，并根据需要调整流程（如通过额外的channel传递错误状态）。
+- 超时控制：通过`select`和`time.After`来实现超时控制，防止goroutine永久阻塞。
+
+使用Go的channels和goroutines，可以构建复杂的异步执行流程，这些流程具有良好的错误处理和超时控制能力，非常适合构建高并发的服务和应用。这种模式类似于其他编程语言中的`Promise`或`Reactive`编程模型比如`JavaScript`，但是更加直观和灵活。
+
+### 使用场景与最佳实践
+
+在实际应用中，goroutine适合用于处理并行任务、长时间运行的后台任务以及需要高并发的情况，如网络服务器。在设计并发程序时，应该注意避免竞态条件、死锁和资源泄漏等问题，确保使用正确的同步技术或消息传递方法来管理状态。
+
+我感觉Go在开发并发应用的时候变得好方便，甩开Java不知道多少条街。。。。。
+
+## 关键字defer
+
+先记一下描述
+
+:::note
+在 Go 语言中，`defer`关键字一般用于确保函数执行结束时可以调用某些代码片段，无论函数是通过返回正常结束，还是由于错误而提前退出。`defer`的用途有点类似于`Java`中的`try-catch-finally`块。用来做资源清理，流关闭，解锁以及一些必须要清理或者执行的代码或者说逻辑用。
+:::
+
+:::info
+但是需要特别注意的是如果在`宕机`、调用`os.exit(-1)`等程序强制退出的状态时`defer`函数就不会被执行，因为这个程序的线程已经被杀掉了没办法执行。
+:::
+
+### 基本用法
+
+```go
+func readFile(filename string) {
+    f, err := os.Open(filename)
+    if err != nil {
+        log.Fatalf("error opening the file: %v", err)
+    }
+    defer f.Close()  // 确保文件在函数结束时关闭
+
+    // 执行文件读取操作
+}
+```
+
+:::note
+defer f.Close()确保在readFile函数结束时（无论是因为函数正常结束还是因为发生了错误而提前返回），文件都会被关闭。这是处理资源清理非常方便的方式。
+:::
+
+### 执行顺序
+
+如果一个函数有多个`defer`语句，它们执行的顺序与声明顺序相反，即`后进先出(LIFO)`原则。
+
+```go
+func multipleDefers() {
+    defer fmt.Println("first")
+    defer fmt.Println("second")
+    defer fmt.Println("third")
+
+    fmt.Println("function body")
+}
+
+// 输出：
+// function body
+// third
+// second
+// first
+```
+
+### 参数评估
+
+`defer`语句中的函数调用的参数会在`defer`语句被执行时立即求值，而不是在包含函数退出时。也就是说如果`defer`了一个函数调用，改调用的函数中传入的参数会在`defer`语句所在的位置被求值，但是这个函数本身是在函数结束的时候调用的。
+
+```go
+func deferArguments() {
+    i := 10
+    defer fmt.Println("deferred:", i)
+    i = 20
+    fmt.Println("in function:", i)
+}
+
+// 输出：
+// in function: 20
+// deferred: 10
+```
+
+> 虽然i在defer语句执行后被修改，但是defer语句使用的是i的原始值。
+
+### 常见用途
+
+- 资源管理：确保文件、数据库连接、锁以及流等资源被适时释放。
+- 错误处理：在执行清理操作之前，处理可能发生的错误。
+- 复杂函数中的清理操作：在处理多个错误返回点时，简化清理逻辑。
+
+### 注意事项
+
+- 避免在循环内使用`defer`，因为这会导致资源在循环结束前不被释放，可能会导致资源耗尽或性能的问题。
+- 理解`defer`的执行顺序和参数评估规则，避免常见的错误。
+- 如果在`宕机`、调用`os.exit(-1)`等程序强制退出的状态时`defer`函数就不会被执行，因为这个程序的线程已经被杀掉了没办法执行。
+
+`defer`是Go语言提供的一种强大的语言结构吧我觉得，用来简化和确保函数在完成后能清理其他使用的资源。正确使用`defer`感觉代码比Java的`try-catch-finally`块简洁很多。当然这样做流关闭等操作也会让程序更安全了。
+
+### 区别
+
+#### Golang
+
+```go
+func readFile(filename string) {
+    f, err := os.Open(filename)
+    if err != nil {
+        log.Fatalf("error opening the file: %v", err)
+    }
+    defer f.Close()  // 确保文件在函数结束时关闭
+
+    // 执行文件读取操作
+}
+```
+
+#### Java
+
+> 在Java中实现`defer`关键字的功能可以使用`try-catch-finally`然后在`finally`块里面执行必须要执行的操作。
+
+```java
+@Test
+void finallyTest() {
+    try {
+        System.out.println("try");
+    } finally {
+        System.out.println("finally");
+    }
+}
+// 输出
+// try
+// finally
+```
+
+:::note
+我感觉还是有区别吧`finally`和`defer`不一样的是他必须要有`try块`结构，不像`defer fun1()`可以直接这样调用。而且`defer`是针对整个方法而言，但是`finally`针对整个`try-catch(如果有的话)-finally`
+:::
+
+## 并发和并行
+
+### 并发(Concurrency)
+
+:::note
+并发是指系统能够处理多个任务的能力，但不一定同时。在单核处理器上，一个核心在同一时间内只能执行一个任务，但操作系统可以通过时间片轮转等技术，让多个任务交替执行，从宏观上看，好像是同时执行的。这就像是一个人在做多项工作，比如同时处理邮件、接听电话和编写报告，他会在这些任务之间快速切换，每个任务都有点进展，但在任何给定的瞬间，他只能做一件事。
+:::
+
+我的理解：一位厨师在厨房里做饭。他需要同时煮汤、炒菜和烤面包。尽管他一次只能专注于一项任务，但他可以在这些任务之间快速切换：检查汤，然后去翻炒菜，再去看看烤箱。从外面看，好像这些事情都在同时进行，但实际上，他同一时刻一次只做了一件事。
+
+### 并行(Parallelism)
+
+:::note
+并行是指多个任务真正同时执行。这通常需要多核或多线程处理器，每个核心或线程可以同时处理不同的任务。这就像有多位厨师在厨房中，每个人都在同时处理不同的菜品。
+:::
+
+我的理解：一把英雄联盟游戏对局里面，游戏里的每个位置(上单、打野、中单、ADC、辅助)都在同时做不同的任务，比如：补刀、刷野、游走。他们不需要等别人完成任务才开始自己的任务，他们是真正的同时在做不同的事情。
+
+总结
+
+:::info
+并发是关于如何有效的处理多个任务，以使它们看似同时进行，通常用于单核处理器。并行则是关于如何实际同时执行多个任务，需要多核或多处理器系统。在实际应用中，这两种技术可以同时用，提高系统效率和响应速度。
+:::
+
+
+## 参考
+
+- [Golang Issues](https://github.com/golang/go/issues)
+- [Golang Doc](https://go.dev/doc/)
+- [ChatGPT](https://chat.openai.com)

@@ -6,25 +6,27 @@ import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Heading from '@theme/Heading';
 
 import styles from './index.module.css';
-
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
+
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
-      <div className="container">
-        <Heading as="h1" className="hero__title">
-          {siteConfig.title}
-        </Heading>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <div className={styles.buttons}>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/web3/Solidity/solidity-lang">
-            学习Web3
-          </Link>
+    <div>
+      <header className={clsx('hero hero--primary', styles.heroBanner)}>
+        <div className="container">
+          <Heading as="h1" className="hero__title">
+            {siteConfig.title}
+          </Heading>
+          <p className="hero__subtitle">{siteConfig.tagline}</p>
+          <div className={styles.buttons}>
+            <Link
+              className="button button--secondary button--lg"
+              to="/docs/web3/Solidity/solidity_lang">
+              随记
+            </Link>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 }
 
@@ -34,9 +36,9 @@ export default function Home(): JSX.Element {
     <Layout
       title={`Hello from ${siteConfig.title}`}
       description="Description will go into a meta tag in <head />">
-      <HomepageHeader />
+      <HomepageHeader/>
       <main>
-        <HomepageFeatures />
+        <HomepageFeatures/>
       </main>
     </Layout>
   );

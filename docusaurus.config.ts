@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Jixiang',
-  tagline: '知识丰富自我',
+  tagline: 'Keep loving. Quiet and uneventful',
   favicon: 'img/favicon1.svg',
 
   // Set the production url of your site here
@@ -38,7 +38,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/Jixiangup/wealth/tree/main',
         },
         blog: {
           showReadingTime: true,
@@ -69,11 +69,17 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: '笔记',
+          label: '随记',
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/facebook/docusaurus',
+          position: 'left',
+          to: '/tools',
+          // type: 'link',
+          label: '工具',
+        },
+        {
+          href: 'https://github.com/jixiangup/wealth',
           label: 'GitHub',
           position: 'right',
         },
@@ -82,41 +88,6 @@ const config: Config = {
     footer: {
       style: 'dark',
       links: [
-        {
-          title: '笔记',
-          items: [
-            {
-              label: 'Web3',
-              to: '/docs/web3/Solidity/solidity-lang',
-            },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
-            {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-            },
-            {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
-            },
-            {
-              label: 'Twitter',
-              href: 'https://twitter.com/docusaurus',
-            },
-          ],
-        },
-        {
-          title: '支持',
-          items: [
-            {
-              label: 'Docusaurus',
-              href: 'https://docusaurus.io/',
-            },
-          ],
-        },
         {
           title: '更多',
           items: [
@@ -136,6 +107,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['java'],
     },
   } satisfies Preset.ThemeConfig,
 };
