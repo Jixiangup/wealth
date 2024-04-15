@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwealth=self.webpackChunkwealth||[]).push([[578],{3206:(e,s,h)=>{h.r(s),h.d(s,{default:()=>a});var l=h(781),c=h(4848);const d=()=>(0,c.jsx)("div",{children:"\u6682\u65f6\u5565\u4e5f\u4e0d\u653e\u5427\uff5e"}),a=()=>(0,c.jsx)(l.A,{children:(0,c.jsx)("div",{children:(0,c.jsx)(d,{})})})}}]);
